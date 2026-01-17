@@ -11,6 +11,8 @@
     # pkgs.nodejs_20
     # pkgs.nodePackages.nodemon
     pkgs.pnpm
+    pkgs.docker-compose
+    pkgs.openssl
   ];
   # Sets environment variables in the workspace
   env = {};

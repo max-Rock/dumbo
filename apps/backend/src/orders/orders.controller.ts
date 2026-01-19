@@ -18,11 +18,15 @@ import {
   import { AcceptOrderDto } from './dto/accept-order.dto';
   import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
   import { OrderStatus } from '@prisma/client';
+  import { PrismaService } from '../prisma/prisma.service';
   
   @Controller('orders')
   @UseGuards(JwtAuthGuard, RolesGuard)
   export class OrdersController {
-    constructor(private ordersService: OrdersService) {}
+    constructor(
+      private ordersService: OrdersService,
+      private prisma: PrismaService,
+    ) {}
   
     // CUSTOMER ENDPOINTS
     @Post()
@@ -38,7 +42,7 @@ import {
         throw new NotFoundException('Customer profile not found for this user.');
       }
 
-      return this.ordersService.createOrder(customer.id, dto);
+      return this.ordersService.createOrder(customer.id, dto, req.user.sub);
     }
   
     @Get(':id')

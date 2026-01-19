@@ -17,7 +17,7 @@ export class OrdersService {
   }
 
   // CREATE ORDER (Customer)
-  async createOrder(customerId: string, dto: CreateOrderDto) {
+  async createOrder(customerId: string, dto: CreateOrderDto, userId?: string) {
     const orderNumber = this.generateOrderNumber();
 
     // Calculate platform fee and tax
@@ -68,7 +68,7 @@ export class OrdersService {
       data: {
         orderId: order.id,
         status: 'PENDING',
-        changedBy: customerId,
+        changedBy: userId || null,
       },
     });
 

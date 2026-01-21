@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
-import { TextInput, Button, Text, ActivityIndicator } from 'react-native-paper';
+import { TextInput, Button, Text, Divider } from 'react-native-paper';
 import { authAPI } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 
@@ -17,9 +17,15 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
 
+    console.log('=== LOGIN DEBUG ===');
+    console.log('Identifier:', identifier);
+    console.log('Password:', password);
+
     setLoading(true);
     try {
-      const response = await authAPI.login(identifier, password);
+      const response = await authAPI.login(identifier.trim(), password.trim());
+      console.log('Login success:', response.data);
+      
       const { accessToken, refreshToken, user } = response.data;
 
       if (user.role !== 'RESTAURANT') {
@@ -31,6 +37,8 @@ export default function LoginScreen({ navigation }: any) {
       await setTokens(accessToken, refreshToken);
       setUser(user);
     } catch (error: any) {
+      console.log('=== LOGIN ERROR ===');
+      console.log('Error:', error.response?.data);
       Alert.alert('Login Failed', error.response?.data?.message || 'Invalid credentials');
     } finally {
       setLoading(false);
@@ -71,6 +79,21 @@ export default function LoginScreen({ navigation }: any) {
       >
         {loading ? 'Logging in...' : 'Login'}
       </Button>
+
+      <Divider style={styles.divider} />
+
+      <Text variant="bodyMedium" style={styles.orText}>
+        Don't have an account?
+      </Text>
+
+      <Button
+        mode="outlined"
+        onPress={() => navigation.navigate('Register')}
+        style={styles.registerButton}
+        icon="account-plus"
+      >
+        Create New Account
+      </Button>
     </View>
   );
 }
@@ -92,6 +115,17 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 16,
+    paddingVertical: 8,
+  },
+  divider: {
+    marginVertical: 32,
+  },
+  orText: {
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 16,
+  },
+  registerButton: {
     paddingVertical: 8,
   },
 });

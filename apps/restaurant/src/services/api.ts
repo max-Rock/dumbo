@@ -1,7 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'https://3001-firebase-kuikbee-dupli-1768542955599.cluster-73qgvk7hjjadkrjeyexca5ivva.cloudworkstations.dev'
+const API_BASE_URL = 'https://shantae-nonperversive-anastasia.ngrok-free.dev';
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,

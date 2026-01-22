@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { RestaurantsModule } from './restaurants/restaurants.module';
 import { MenuModule } from './menu/menu.module';
 import { OrdersModule } from './orders/orders.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { OrdersModule } from './orders/orders.module';
       isGlobal: true,
     }),
     PrismaModule,
+    CommonModule,
     AuthModule,
     RestaurantsModule,
     MenuModule,

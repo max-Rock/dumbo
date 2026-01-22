@@ -1,14 +1,37 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { createStackNavigator } from '@react-navigation/stack';
 import OrdersScreen from '../screens/OrdersScreen';
 import MenuScreen from '../screens/MenuScreen';
+import AddMenuItemScreen from '../screens/AddMenuItemScreen';
 import EarningsScreen from '../screens/EarningsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Settings02Icon, Money03Icon, MenuRestaurantIcon, Invoice04Icon } from '@hugeicons/core-free-icons'
 
 const Tab = createBottomTabNavigator();
+const MenuStack = createStackNavigator();
+
+function MenuStackScreen() {
+  return (
+    <MenuStack.Navigator>
+      <MenuStack.Screen 
+        name="MenuList" 
+        component={MenuScreen}
+        options={{ headerShown: false }}
+      />
+      <MenuStack.Screen 
+        name="AddMenuItem" 
+        component={AddMenuItemScreen}
+        options={{ 
+          title: 'Add Menu Item',
+          headerStyle: { backgroundColor: '#007AFF' },
+          headerTintColor: '#fff',
+        }}
+      />
+    </MenuStack.Navigator>
+  );
+}
 
 export default function MainNavigator() {
   return (
@@ -37,8 +60,10 @@ export default function MainNavigator() {
       />
       <Tab.Screen
         name="Menu"
-        component={MenuScreen}
+        // component={MenuScreen}
+        component={MenuStackScreen}
         options={{
+          // headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <HugeiconsIcon icon={MenuRestaurantIcon} size={size} color={color} />
           ),

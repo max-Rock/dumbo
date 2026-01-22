@@ -3,6 +3,8 @@ import { View, StyleSheet, Alert } from 'react-native';
 import { TextInput, Button, Text, Divider } from 'react-native-paper';
 import { authAPI } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { UserAdd02Icon } from '@hugeicons/core-free-icons'
 
 export default function LoginScreen({ navigation }: any) {
   const [identifier, setIdentifier] = useState('');
@@ -90,7 +92,7 @@ export default function LoginScreen({ navigation }: any) {
         mode="outlined"
         onPress={() => navigation.navigate('Register')}
         style={styles.registerButton}
-        icon="account-plus"
+        icon={({ size, color }) => ( <HugeiconsIcon icon={UserAdd02Icon} size={size} color={color} /> )}
       >
         Create New Account
       </Button>

@@ -5,10 +5,14 @@ import { UpdateMenuItemDto } from './dto/update-menu-item.dto';
 import { ToggleAvailabilityDto } from './dto/toggle-availability.dto';
 import { CreateAddonDto } from './dto/create-addon.dto';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { UploadService } from '../common/services/upload.service';
 
 @Injectable()
 export class MenuService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private uploadService: UploadService,
+  ) {}
 
   // Get restaurant ID from user ID
   private async getRestaurantId(userId: string): Promise<string> {
@@ -144,9 +148,23 @@ export class MenuService {
     const restaurantId = await this.getRestaurantId(userId);
     await this.verifyMenuItemOwnership(menuItemId, restaurantId);
 
-    return this.prisma.menuItem.delete({
+      // Get menu item to get image URL
+    const menuItem = await this.prisma.menuItem.findUnique({
+      where: { id: menuItemId },
+      select: { imageUrl: true },
+    });
+
+    // Delete from database
+    const deleted = await this.prisma.menuItem.delete({
       where: { id: menuItemId },
     });
+
+    // Delete image from storage if exists
+    if (menuItem?.imageUrl) {
+      await this.uploadService.deleteImage(menuItem.imageUrl);
+    }
+
+    return deleted;
   }
 
   // ADD-ONS

@@ -1,18 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, Alert } from 'react-native';
-import { Card, Text, Button, Switch, FAB, ActivityIndicator, IconButton } from 'react-native-paper';
+import { View, FlatList, StyleSheet, RefreshControl, Alert, ScrollView } from 'react-native';
+import { Card, Text, Button, Switch, FAB, ActivityIndicator, IconButton, Chip } from 'react-native-paper';
 import { menuAPI } from '../services/api';
+import { useFocusEffect } from '@react-navigation/native';
 
-export default function MenuScreen({ navigation }: any) {
+export default function MenuScreen({ navigation, route }: any) {
   const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchMenuItems = async () => {
+  // Auto-refresh when screen comes into focus or refresh param changes
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchData();
+    }, [])
+  );
+
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchData();
+      // Reset the param
+      navigation.setParams({ refresh: false });
+    }
+  }, [route.params?.refresh]);
+
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await menuAPI.getMenuItems();
-      setMenuItems(response.data);
+      const [itemsRes, categoriesRes] = await Promise.all([
+        menuAPI.getMenuItems(),
+        menuAPI.getCategories(),
+      ]);
+      setMenuItems(itemsRes.data);
+      setCategories(categoriesRes.data);
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch menu items');
     } finally {
@@ -20,10 +42,6 @@ export default function MenuScreen({ navigation }: any) {
       setRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    fetchMenuItems();
-  }, []);
 
   const handleToggleAvailability = async (itemId: string, currentStatus: boolean) => {
     try {
@@ -58,13 +76,24 @@ export default function MenuScreen({ navigation }: any) {
     ]);
   };
 
+  const handleEditItem = (item: any) => {
+    navigation.navigate('AddMenuItem', { item });
+  };
+
+  const filteredItems = selectedCategory
+    ? menuItems.filter((item) => item.categoryId === selectedCategory)
+    : menuItems;
+
   const renderMenuItem = ({ item }: any) => (
     <Card style={styles.card}>
+      {item.imageUrl && (
+        <Card.Cover source={{ uri: item.imageUrl }} style={styles.cardImage} />
+      )}
       <Card.Content>
         <View style={styles.itemHeader}>
           <View style={{ flex: 1 }}>
             <Text variant="titleMedium" style={styles.itemName}>
-              {item.name}
+              {item.isVeg ? '🟢' : '🔴'} {item.name}
             </Text>
             {item.description && (
               <Text variant="bodySmall" style={styles.description}>
@@ -74,10 +103,10 @@ export default function MenuScreen({ navigation }: any) {
             <Text variant="titleSmall" style={styles.price}>
               ₹{item.price}
             </Text>
-            {item.tags && item.tags.length > 0 && (
-              <Text variant="bodySmall" style={styles.tags}>
-                Tags: {item.tags.join(', ')}
-              </Text>
+            {item.category && (
+              <Chip mode="outlined" style={styles.categoryBadge} compact>
+                {item.category.name}
+              </Chip>
             )}
           </View>
 
@@ -97,7 +126,7 @@ export default function MenuScreen({ navigation }: any) {
       <Card.Actions>
         <Button
           mode="outlined"
-          onPress={() => navigation.navigate('EditMenuItem', { item })}
+          onPress={() => handleEditItem(item)}
           icon="pencil"
         >
           Edit
@@ -121,16 +150,51 @@ export default function MenuScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      {/* Category Filter */}
+      {categories.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryScroll}
+          contentContainerStyle={styles.categoryScrollContent}
+        >
+          <Chip
+            mode={selectedCategory === null ? 'flat' : 'outlined'}
+            selected={selectedCategory === null}
+            onPress={() => setSelectedCategory(null)}
+            style={styles.categoryFilterChip}
+          >
+            All ({menuItems.length})
+          </Chip>
+          {categories.map((cat) => {
+            const count = menuItems.filter((item) => item.categoryId === cat.id).length;
+            return (
+              <Chip
+                key={cat.id}
+                mode={selectedCategory === cat.id ? 'flat' : 'outlined'}
+                selected={selectedCategory === cat.id}
+                onPress={() => setSelectedCategory(cat.id)}
+                style={styles.categoryFilterChip}
+              >
+                {cat.name} ({count})
+              </Chip>
+            );
+          })}
+        </ScrollView>
+      )}
+
       <FlatList
-        data={menuItems}
+        data={filteredItems}
         renderItem={renderMenuItem}
         keyExtractor={(item) => item.id}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={fetchMenuItems} />
+          <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text variant="titleMedium">No menu items yet</Text>
+            <Text variant="titleMedium">
+              {selectedCategory ? 'No items in this category' : 'No menu items yet'}
+            </Text>
             <Text variant="bodyMedium" style={{ marginTop: 8 }}>
               Tap + to add your first item
             </Text>
@@ -158,11 +222,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  categoryScroll: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  categoryScrollContent: {
+    padding: 12,
+    gap: 8,
+  },
+  categoryFilterChip: {
+    marginRight: 8,
+  },
   list: {
     padding: 16,
   },
   card: {
     marginBottom: 16,
+  },
+  cardImage: {
+    height: 200,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -179,11 +258,11 @@ const styles = StyleSheet.create({
   price: {
     color: '#007AFF',
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  tags: {
-    color: '#666',
-    fontSize: 12,
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
   },
   itemActions: {
     alignItems: 'center',

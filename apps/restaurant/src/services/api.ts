@@ -5,7 +5,7 @@ const API_BASE_URL = 'https://shantae-nonperversive-anastasia.ngrok-free.dev';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -111,6 +111,38 @@ export const menuAPI = {
   
   deleteMenuItem: (itemId: string) =>
     api.delete(`/menu/items/${itemId}`),
+
+  // Add-ons
+  createAddon: (menuItemId: string, data: any) =>
+    api.post(`/menu/items/${menuItemId}/addons`, data),
+
+  deleteAddon: (addonId: string) =>
+    api.delete(`/menu/addons/${addonId}`),
+
+  
+  // Image upload - send as base64 string
+  uploadImage: async (imageUri: string) => {
+    // Read file as base64
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+    
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64String = reader.result as string;
+          const result = await api.post('/menu/items/upload-image', {
+            image: base64String,
+          });
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  },
   
   getPopularItems: () =>
     api.get('/menu/popular-items'),
